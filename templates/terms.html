@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Terms and Conditions — Spendly{% endblock %}
+
+{% block content %}
+<div class="terms-container" style="max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: var(--text-color);">
+    <h1 style="margin-bottom: 24px;">Terms and Conditions</h1>
+    <p style="margin-bottom: 20px;">Last updated: September 24, 2026</p>
+
+    <section style="margin-bottom: 32px;">
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing or using Spendly, you agree to be bound by these Terms and Conditions and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this site.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2>2. Use of Service</h2>
+        <p>Spendly is a personal expense tracking application. You agree to use the service only for lawful purposes and in a manner that does not infringe the rights of others or restrict their use of the service.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2>3. User Data</h2>
+        <p>Your financial data is your own. Spendly stores the information you provide to help you track your spending. We are committed to protecting your privacy, but you are responsible for maintaining the confidentiality of your account credentials.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2>4. Limitations of Liability</h2>
+        <p>Spendly is provided "as is" without any warranties, express or implied. In no event shall Spendly be liable for any damages (including, without limitation, damages for loss of data or profit) arising out of the use or inability to use the materials on the website.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2>5. Changes to Terms</h2>
+        <p>We reserve the right to revise these terms of service at any time without notice. By using this website, you are agreeing to be bound by the then-current version of these Terms and Conditions.</p>
+    </section>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('landing') }}" style="text-decoration: none; color: var(--primary-color);">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}
