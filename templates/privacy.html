@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy — Spendly{% endblock %}
+
+{% block content %}
+<div class="terms-container" style="max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: var(--text-color);">
+    <h1 style="margin-bottom: 24px;">Privacy Policy</h1>
+    <p style="margin-bottom: 20px;">Last updated: September 24, 2026</p>
+
+    <section style="margin-bottom: 32px;">
+        <h2 style="color: var(--primary-color);">1. Data We Collect</h2>
+        <p>We collect information that you provide directly to us, including your name, email address, and any financial transaction data you log within the application. This data is used solely to provide the expense tracking functionality.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2 style="color: var(--primary-color);">2. How We Use Your Data</h2>
+        <p>Your data is used to:
+            <ul style="margin-top: 10px; padding-left: 20px;">
+                <li>Generate spending reports and analytics.</li>
+                <li>Maintain your user account and preferences.</li>
+                <li>Improve the application's features and user experience.</li>
+            </ul>
+        </p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2 style="color: var(--primary-color);">3. Data Storage</h2>
+        <p>We employ industry-standard security measures to protect your data. Your information is stored securely and is only accessible by you through your authenticated account.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2 style="color: var(--primary-color);">4. Third Party Services</h2>
+        <p>Spendly does not sell or rent your personal data to third parties. We may use third-party infrastructure services (like hosting providers) that process data on our behalf under strict confidentiality agreements.</p>
+    </section>
+
+    <section style="margin-bottom: 32px;">
+        <h2 style="color: var(--primary-color);">5. Contact Us</h2>
+        <p>If you have any questions about this Privacy Policy or how your data is handled, please contact us at privacy@spendly.example.com.</p>
+    </section>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <a href="{{ url_for('landing') }}" style="text-decoration: none; color: var(--primary-color);">← Back to Home</a>
+    </div>
+</div>
+{% endblock %}
