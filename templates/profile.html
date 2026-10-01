@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <!-- User Info Card -->
+    <section class="profile-card">
+        <div class="profile-avatar">
+            {{ user.initials }}
+        </div>
+        <div class="profile-details">
+            <h1>{{ user.name }}</h1>
+            <p>{{ user.email }} &bull; Member since {{ user.member_since }}</p>
+        </div>
+    </section>
+
+    <!-- Summary Stats -->
+    <section class="stats-grid">
+        {% for stat in stats %}
+        <div class="stat-tile">
+            <span class="stat-label">{{ stat.label }}</span>
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-trend">{{ stat.trend }}</span>
+        </div>
+        {% endfor %}
+    </section>
+
+    <!-- Main Content -->
+    <div class="profile-main">
+        <!-- Transactions Table -->
+        <section class="data-card">
+            <h2>Recent Transactions</h2>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td>{{ tx.date }}</td>
+                        <td>{{ tx.description }}</td>
+                        <td><span class="category-badge">{{ tx.category }}</span></td>
+                        <td style="font-weight: 600;">{{ tx.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Category Breakdown -->
+        <section class="data-card">
+            <h2>Spending Breakdown</h2>
+            <div class="category-list">
+                {% for cat in categories %}
+                <div class="category-item">
+                    <div class="category-info">
+                        <span class="category-name">{{ cat.name }}</span>
+                        <span class="category-amount">{{ cat.amount }}</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill" style="width: {{ cat.percentage }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

@@ -82,7 +82,8 @@ def login():
         user = get_user_by_email(email)
         if user and check_password_hash(user["password_hash"], password):
             session["user_id"] = user["id"]
-            return redirect(url_for("landing"))
+            return redirect(url_for("profile"))
+
 
         flash("Invalid email or password.")
         return render_template("login.html")
@@ -114,7 +115,41 @@ def privacy():
 @app.route("/profile")
 @login_required
 def profile():
-    return "Profile page — coming in Step 4"
+    user_info = {
+        "name": "Hrithik Sharma",
+        "email": "hrithik@example.com",
+        "member_since": "January 2024",
+        "initials": "HS"
+    }
+
+    summary_stats = [
+        {"label": "Total Spent", "value": "₹42,500", "trend": "-12% from last month"},
+        {"label": "Transactions", "value": "128", "trend": "+5% from last month"},
+        {"label": "Top Category", "value": "Dining", "trend": "High spending"}
+    ]
+
+    transactions = [
+        {"date": "Oct 1, 2026", "description": "Starbucks Coffee", "category": "Dining", "amount": "-₹450"},
+        {"date": "Sep 30, 2026", "description": "Amazon Electronics", "category": "Shopping", "amount": "-₹2,100"},
+        {"date": "Sep 28, 2026", "description": "Monthly Rent", "category": "Housing", "amount": "-₹15,000"},
+        {"date": "Sep 25, 2026", "description": "Petrol Pump", "category": "Transport", "amount": "-₹1,200"},
+    ]
+
+    categories = [
+        {"name": "Housing", "amount": "₹15,000", "percentage": 35},
+        {"name": "Dining", "amount": "₹8,200", "percentage": 19},
+        {"name": "Shopping", "amount": "₹6,500", "percentage": 15},
+        {"name": "Transport", "amount": "₹4,100", "percentage": 10},
+    ]
+
+    return render_template(
+        "profile.html",
+        user=user_info,
+        stats=summary_stats,
+        transactions=transactions,
+        categories=categories
+    )
+
 
 
 @app.route("/expenses/add")
