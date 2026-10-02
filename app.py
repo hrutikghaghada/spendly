@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session
 from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from database.queries import get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown
 from werkzeug.security import check_password_hash
 import sqlite3
 from functools import wraps
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-for-spendly"
@@ -115,32 +117,52 @@ def privacy():
 @app.route("/profile")
 @login_required
 def profile():
-    user_info = {
-        "name": "Hrithik Sharma",
-        "email": "hrithik@example.com",
-        "member_since": "January 2024",
-        "initials": "HS"
-    }
+    uid = session["user_id"]
+    user_info = get_user_by_id(uid)
 
+    if not user_info:
+        abort(404)
+
+    # Calculate initials (First letter of first and last name)
+    name_parts = user_info["name"].split()
+    initials = "".join([p[0].upper() for p in name_parts if p])
+    user_info["initials"] = initials if initials else "?"
+
+    # Calculate summary statistics
+    stats_data = get_summary_stats(uid)
     summary_stats = [
-        {"label": "Total Spent", "value": "₹42,500", "trend": "-12% from last month"},
-        {"label": "Transactions", "value": "128", "trend": "+5% from last month"},
-        {"label": "Top Category", "value": "Dining", "trend": "High spending"}
+        {"label": "Total Spent", "value": f"₹{stats_data['total_spent']:,.2f}", "trend": "—"},
+        {"label": "Transactions", "value": str(stats_data['transaction_count']), "trend": "—"},
+        {"label": "Top Category", "value": stats_data['top_category'], "trend": "—"}
     ]
 
-    transactions = [
-        {"date": "Oct 1, 2026", "description": "Starbucks Coffee", "category": "Dining", "amount": "-₹450"},
-        {"date": "Sep 30, 2026", "description": "Amazon Electronics", "category": "Shopping", "amount": "-₹2,100"},
-        {"date": "Sep 28, 2026", "description": "Monthly Rent", "category": "Housing", "amount": "-₹15,000"},
-        {"date": "Sep 25, 2026", "description": "Petrol Pump", "category": "Transport", "amount": "-₹1,200"},
-    ]
+    # Get recent transactions from DB
+    raw_transactions = get_recent_transactions(uid)
+    transactions = []
+    for tx in raw_transactions:
+        # Format date: '2026-10-01' -> 'Oct 1, 2026'
+        dt = datetime.strptime(tx["date"], "%Y-%m-%d")
+        formatted_date = dt.strftime("%b %-d, %Y")
 
-    categories = [
-        {"name": "Housing", "amount": "₹15,000", "percentage": 35},
-        {"name": "Dining", "amount": "₹8,200", "percentage": 19},
-        {"name": "Shopping", "amount": "₹6,500", "percentage": 15},
-        {"name": "Transport", "amount": "₹4,100", "percentage": 10},
-    ]
+        # Format amount: 450.0 -> '-₹450.00' (with thousands separator)
+        formatted_amount = f"-₹{tx['amount']:,.2f}"
+
+        transactions.append({
+            "date": formatted_date,
+            "description": tx["description"],
+            "category": tx["category"],
+            "amount": formatted_amount
+        })
+
+    # Get category breakdown from DB
+    raw_categories = get_category_breakdown(uid)
+    categories = []
+    for cat in raw_categories:
+        categories.append({
+            "name": cat["name"],
+            "amount": f"₹{cat['amount']:,.2f}",
+            "percentage": cat["pct"]
+        })
 
     return render_template(
         "profile.html",
