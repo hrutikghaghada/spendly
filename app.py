@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session
 from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
 from database.queries import get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown
+from database.utils import calculate_date_presets, validate_date_range
 from werkzeug.security import check_password_hash
 import sqlite3
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-for-spendly"
@@ -86,7 +87,6 @@ def login():
             session["user_id"] = user["id"]
             return redirect(url_for("profile"))
 
-
         flash("Invalid email or password.")
         return render_template("login.html")
 
@@ -123,13 +123,23 @@ def profile():
     if not user_info:
         abort(404)
 
+    # --- Date Filter Logic ---
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+
+    validated_from, validated_to, error = validate_date_range(date_from, date_to)
+    if error:
+        flash(error)
+
+    presets = calculate_date_presets()
+
     # Calculate initials (First letter of first and last name)
     name_parts = user_info["name"].split()
     initials = "".join([p[0].upper() for p in name_parts if p])
     user_info["initials"] = initials if initials else "?"
 
     # Calculate summary statistics
-    stats_data = get_summary_stats(uid)
+    stats_data = get_summary_stats(uid, validated_from, validated_to)
     summary_stats = [
         {"label": "Total Spent", "value": f"₹{stats_data['total_spent']:,.2f}", "trend": "—"},
         {"label": "Transactions", "value": str(stats_data['transaction_count']), "trend": "—"},
@@ -137,7 +147,7 @@ def profile():
     ]
 
     # Get recent transactions from DB
-    raw_transactions = get_recent_transactions(uid)
+    raw_transactions = get_recent_transactions(uid, date_from=validated_from, date_to=validated_to)
     transactions = []
     for tx in raw_transactions:
         # Format date: '2026-10-01' -> 'Oct 1, 2026'
@@ -155,7 +165,7 @@ def profile():
         })
 
     # Get category breakdown from DB
-    raw_categories = get_category_breakdown(uid)
+    raw_categories = get_category_breakdown(uid, date_from=validated_from, date_to=validated_to)
     categories = []
     for cat in raw_categories:
         categories.append({
@@ -169,9 +179,12 @@ def profile():
         user=user_info,
         stats=summary_stats,
         transactions=transactions,
-        categories=categories
+        categories=categories,
+        # Filter context
+        date_from=validated_from,
+        date_to=validated_to,
+        presets=presets
     )
-
 
 
 @app.route("/expenses/add")

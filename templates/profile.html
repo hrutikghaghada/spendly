@@ -17,6 +17,29 @@
         </div>
     </section>
 
+    <!-- Date Filter Bar -->
+    <section class="profile-filter-bar">
+        <div class="filter-presets">
+            <a href="{{ url_for('profile') }}"
+               class="preset-btn {{ 'active' if not date_from and not date_to }}">All Time</a>
+
+            <a href="{{ url_for('profile', date_from=presets.this_month.from, date_to=presets.this_month.to) }}"
+               class="preset-btn {{ 'active' if date_from == presets.this_month.from and date_to == presets.this_month.to }}">This Month</a>
+
+            <a href="{{ url_for('profile', date_from=presets.three_months.from, date_to=presets.three_months.to) }}"
+               class="preset-btn {{ 'active' if date_from == presets.three_months.from and date_to == presets.three_months.to }}">Last 3 Months</a>
+
+            <a href="{{ url_for('profile', date_from=presets.six_months.from, date_to=presets.six_months.to) }}"
+               class="preset-btn {{ 'active' if date_from == presets.six_months.from and date_to == presets.six_months.to }}">Last 6 Months</a>
+        </div>
+
+        <form class="custom-range-form" method="GET">
+            <input type="date" name="date_from" value="{{ date_from or '' }}">
+            <input type="date" name="date_to" value="{{ date_to or '' }}">
+            <button type="submit" class="apply-btn">Apply</button>
+        </form>
+    </section>
+
     <!-- Summary Stats -->
     <section class="stats-grid">
         {% for stat in stats %}
