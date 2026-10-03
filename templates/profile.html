@@ -55,7 +55,10 @@
     <div class="profile-main">
         <!-- Transactions Table -->
         <section class="data-card">
-            <h2>Recent Transactions</h2>
+            <div class="card-header">
+                <h2>Recent Transactions</h2>
+                <a href="{{ url_for('add_expense') }}" class="btn-add">Add Expense</a>
+            </div>
             <table class="transaction-table">
                 <thead>
                     <tr>

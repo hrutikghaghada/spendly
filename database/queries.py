@@ -149,3 +149,14 @@ def get_summary_stats(user_id, date_from=None, date_to=None):
             'transaction_count': transaction_count,
             'top_category': top_category
         }
+
+def insert_expense(user_id, amount, category, date, description):
+    """
+    Inserts a new expense record into the database.
+    """
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()

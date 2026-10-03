@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense - Spendly{% endblock %}
+
+{% block head %}
+<style>
+    .add-expense-container {
+        display: flex;
+        justify-content: center;
+        padding: 4rem 2rem;
+    }
+
+    .form-card {
+        background: var(--paper-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 2.5rem;
+        width: 100%;
+        max-width: var(--auth-width);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    }
+
+    .form-card h1 {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        color: var(--ink);
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    .form-subtitle {
+        text-align: center;
+        color: var(--ink-muted);
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+    }
+
+    .expense-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .expense-form .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--ink-soft);
+        margin-bottom: 0.5rem;
+    }
+
+    .expense-form .form-input,
+    .expense-form select,
+    .expense-form textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        color: var(--ink);
+        background: var(--paper);
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .expense-form .form-input:focus,
+    .expense-form select:focus,
+    .expense-form textarea:focus {
+        border-color: var(--accent);
+    }
+
+    .form-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-save {
+        background: var(--ink);
+        color: var(--paper);
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--radius-sm);
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: background 0.2s;
+        flex: 1;
+    }
+
+    .btn-save:hover {
+        background: var(--accent);
+    }
+
+    .btn-cancel {
+        color: var(--ink-muted);
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .btn-cancel:hover {
+        color: var(--ink);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="add-expense-container">
+    <div class="form-card">
+        <h1>Add New Expense</h1>
+        <p class="form-subtitle">Track your spending to stay on budget</p>
+
+        <form action="{{ url_for('add_expense') }}" method="POST" class="expense-form">
+            <div class="form-group">
+                <label for="amount">Amount (₹)</label>
+                <input type="number" id="amount" name="amount" step="0.01" min="0.01"
+                       class="form-input" value="{{ request.form.get('amount', '') }}" required
+                       placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="" disabled {% if not request.form.get('category') %}selected{% endif %}>Select a category</option>
+                    {% for cat in ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"] %}
+                        <option value="{{ cat }}" {% if request.form.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" class="form-input"
+                       value="{{ request.form.get('date', '') }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (Optional)</label>
+                <textarea id="description" name="description" rows="3"
+                          placeholder="What was this for?">{{ request.form.get('description', '') }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('profile') }}" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-save">Save Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
