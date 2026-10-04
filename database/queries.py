@@ -1,6 +1,7 @@
 from database.db import get_db
 from datetime import datetime
 
+
 def get_user_by_id(user_id):
     """
     Fetches a user record by ID and formats the member_since date.
@@ -8,25 +9,25 @@ def get_user_by_id(user_id):
     """
     with get_db() as conn:
         user = conn.execute(
-            "SELECT name, email, created_at FROM users WHERE id = ?",
-            (user_id,)
+            "SELECT name, email, created_at FROM users WHERE id = ?", (user_id,)
         ).fetchone()
 
         if user:
             # Handle various SQLite date formats (ISO 8601 with 'T' or space)
-            date_str = user['created_at'].replace('T', ' ')
+            date_str = user["created_at"].replace("T", " ")
             # Strip microseconds if present to match '%Y-%m-%d %H:%M:%S'
-            if '.' in date_str:
-                date_str = date_str.split('.')[0]
+            if "." in date_str:
+                date_str = date_str.split(".")[0]
 
-            dt = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
-            member_since = dt.strftime('%B %Y')
+            dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+            member_since = dt.strftime("%B %Y")
             return {
-                "name": user['name'],
-                "email": user['email'],
-                "member_since": member_since
+                "name": user["name"],
+                "email": user["email"],
+                "member_since": member_since,
             }
         return None
+
 
 def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """
@@ -34,7 +35,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     Returns: A list of dicts: {'date': str, 'description': str, 'category': str, 'amount': float}
     """
     with get_db() as conn:
-        query = "SELECT date, description, category, amount FROM expenses WHERE user_id = ?"
+        query = "SELECT id, date, description, category, amount FROM expenses WHERE user_id = ?"
         params = [user_id]
 
         if date_from:
@@ -53,10 +54,12 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
                 "date": row["date"],
                 "description": row["description"],
                 "category": row["category"],
-                "amount": row["amount"]
+                "amount": row["amount"],
+                "id": row["id"],
             }
             for row in cursor
         ]
+
 
 def get_category_breakdown(user_id, date_from=None, date_to=None):
     """
@@ -84,7 +87,10 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
 
         total_spent = sum(row["total"] for row in rows)
         if total_spent == 0:
-            return [{"name": row["category"], "amount": row["total"], "pct": 0} for row in rows]
+            return [
+                {"name": row["category"], "amount": row["total"], "pct": 0}
+                for row in rows
+            ]
 
         breakdown = []
         sum_pct = 0
@@ -94,14 +100,13 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
             if i == len(rows) - 1:
                 pct = 100 - sum_pct
 
-            breakdown.append({
-                "name": row["category"],
-                "amount": row["total"],
-                "pct": pct
-            })
+            breakdown.append(
+                {"name": row["category"], "amount": row["total"], "pct": pct}
+            )
             sum_pct += pct
 
         return breakdown
+
 
 def get_summary_stats(user_id, date_from=None, date_to=None):
     """
@@ -142,13 +147,14 @@ def get_summary_stats(user_id, date_from=None, date_to=None):
         category_query += " GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1"
         category_row = conn.execute(category_query, category_params).fetchone()
 
-        top_category = category_row['category'] if category_row else "None"
+        top_category = category_row["category"] if category_row else "None"
 
         return {
-            'total_spent': float(total_spent),
-            'transaction_count': transaction_count,
-            'top_category': top_category
+            "total_spent": float(total_spent),
+            "transaction_count": transaction_count,
+            "top_category": top_category,
         }
+
 
 def insert_expense(user_id, amount, category, date, description):
     """
@@ -157,6 +163,31 @@ def insert_expense(user_id, amount, category, date, description):
     with get_db() as conn:
         conn.execute(
             "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
-            (user_id, amount, category, date, description)
+            (user_id, amount, category, date, description),
+        )
+        conn.commit()
+
+
+def get_expense_by_id(expense_id, user_id):
+    """
+    Fetches a single expense record by ID for a specific user.
+    Returns: dict or None
+    """
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+        return row
+
+
+def update_expense(expense_id, user_id, amount, category, date, description):
+    """
+    Updates an existing expense record for a specific user.
+    """
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, date = ?, description = ? WHERE id = ? AND user_id = ?",
+            (amount, category, date, description, expense_id, user_id),
         )
         conn.commit()
