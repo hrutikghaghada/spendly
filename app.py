@@ -1,6 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort, session
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    abort,
+    session,
+)
 from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
-from database.queries import get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown, insert_expense
+from database.queries import (
+    get_user_by_id,
+    get_summary_stats,
+    get_recent_transactions,
+    get_category_breakdown,
+    insert_expense,
+    get_expense_by_id,
+    update_expense,
+)
 from database.utils import calculate_date_presets, validate_date_range
 from werkzeug.security import check_password_hash
 import sqlite3
@@ -14,6 +31,7 @@ with app.app_context():
     init_db()
     seed_db()
 
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -21,7 +39,9 @@ def login_required(f):
             flash("Please sign in to access this page.")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
+
     return decorated_function
+
 
 def guest_only(f):
     @wraps(f)
@@ -29,6 +49,7 @@ def guest_only(f):
         if "user_id" in session:
             return redirect(url_for("landing"))
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -141,13 +162,23 @@ def profile():
     # Calculate summary statistics
     stats_data = get_summary_stats(uid, validated_from, validated_to)
     summary_stats = [
-        {"label": "Total Spent", "value": f"₹{stats_data['total_spent']:,.2f}", "trend": "—"},
-        {"label": "Transactions", "value": str(stats_data['transaction_count']), "trend": "—"},
-        {"label": "Top Category", "value": stats_data['top_category'], "trend": "—"}
+        {
+            "label": "Total Spent",
+            "value": f"₹{stats_data['total_spent']:,.2f}",
+            "trend": "—",
+        },
+        {
+            "label": "Transactions",
+            "value": str(stats_data["transaction_count"]),
+            "trend": "—",
+        },
+        {"label": "Top Category", "value": stats_data["top_category"], "trend": "—"},
     ]
 
     # Get recent transactions from DB
-    raw_transactions = get_recent_transactions(uid, date_from=validated_from, date_to=validated_to)
+    raw_transactions = get_recent_transactions(
+        uid, date_from=validated_from, date_to=validated_to
+    )
     transactions = []
     for tx in raw_transactions:
         # Format date: '2026-10-01' -> 'Oct 1, 2026'
@@ -157,22 +188,29 @@ def profile():
         # Format amount: 450.0 -> '-₹450.00' (with thousands separator)
         formatted_amount = f"-₹{tx['amount']:,.2f}"
 
-        transactions.append({
-            "date": formatted_date,
-            "description": tx["description"],
-            "category": tx["category"],
-            "amount": formatted_amount
-        })
+        transactions.append(
+            {
+                "id": tx["id"],
+                "date": formatted_date,
+                "description": tx["description"],
+                "category": tx["category"],
+                "amount": formatted_amount,
+            }
+        )
 
     # Get category breakdown from DB
-    raw_categories = get_category_breakdown(uid, date_from=validated_from, date_to=validated_to)
+    raw_categories = get_category_breakdown(
+        uid, date_from=validated_from, date_to=validated_to
+    )
     categories = []
     for cat in raw_categories:
-        categories.append({
-            "name": cat["name"],
-            "amount": f"₹{cat['amount']:,.2f}",
-            "percentage": cat["pct"]
-        })
+        categories.append(
+            {
+                "name": cat["name"],
+                "amount": f"₹{cat['amount']:,.2f}",
+                "percentage": cat["pct"],
+            }
+        )
 
     return render_template(
         "profile.html",
@@ -183,7 +221,7 @@ def profile():
         # Filter context
         date_from=validated_from,
         date_to=validated_to,
-        presets=presets
+        presets=presets,
     )
 
 
@@ -212,7 +250,15 @@ def add_expense():
             errors.append("Please enter a valid numeric amount.")
 
         # Category validation
-        allowed_categories = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+        allowed_categories = [
+            "Food",
+            "Transport",
+            "Bills",
+            "Health",
+            "Entertainment",
+            "Shopping",
+            "Other",
+        ]
         if not category or category not in allowed_categories:
             errors.append("Please select a valid category.")
 
@@ -240,10 +286,79 @@ def add_expense():
     return render_template("add_expense.html")
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    uid = session["user_id"]
+    expense = get_expense_by_id(id, uid)
+
+    if not expense:
+        abort(404)
+
+    allowed_categories = [
+        "Food",
+        "Transport",
+        "Bills",
+        "Health",
+        "Entertainment",
+        "Shopping",
+        "Other",
+    ]
+
+    if request.method == "POST":
+        amount_raw = request.form.get("amount")
+        category = request.form.get("category")
+        date_raw = request.form.get("date")
+        description = request.form.get("description", "").strip()
+
+        if not description:
+            description = None
+
+        # Validation
+        errors = []
+
+        # Amount validation
+        try:
+            amount = float(amount_raw)
+            if amount <= 0:
+                errors.append("Amount must be greater than 0.")
+        except (TypeError, ValueError):
+            errors.append("Please enter a valid numeric amount.")
+
+        # Category validation
+        if not category or category not in allowed_categories:
+            errors.append("Please select a valid category.")
+
+        # Date validation
+        try:
+            datetime.strptime(date_raw, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            errors.append("Please provide a valid date.")
+
+        if errors:
+            # Join errors into a single string for the template's error-message div
+            error_msg = " ".join(errors)
+            return render_template(
+                "edit_expense.html",
+                expense=expense,
+                categories=allowed_categories,
+                error=error_msg,
+            )
+
+        # Success path
+        try:
+            update_expense(id, uid, amount, category, date_raw, description)
+            flash("Expense updated successfully!")
+            return redirect(url_for("profile"))
+        except Exception as e:
+            flash(f"An error occurred while updating: {str(e)}")
+            return render_template(
+                "edit_expense.html", expense=expense, categories=allowed_categories
+            )
+
+    return render_template(
+        "edit_expense.html", expense=expense, categories=allowed_categories
+    )
 
 
 @app.route("/expenses/<int:id>/delete")
